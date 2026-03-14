@@ -34,7 +34,7 @@
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/iChillyO/CodeTyper.git
-   cd CodeTyper
+   cd CodeTyper/landing
    ```
 
 2. **Install dependencies:**
@@ -43,7 +43,7 @@
    ```
 
 3. **Environment Setup:**
-   Create a `.env.local` file in the `landing` directory and add:
+   Create a `.env.local` file in the root directory and add:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
