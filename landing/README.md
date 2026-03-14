@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎬 CodeTyper
 
-## Getting Started
+**CodeTyper** is a premium web application that transforms your code snippets into cinematic, high-quality videos—perfect for sharing on social media, tutorials, or documentation.
 
-First, run the development server:
+![Project Preview](https://github.com/iChillyO/CodeTyper/blob/main/public/preview.png?raw=true)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Cinematic Typing Animation**: Intelligent typing logic that pauses for symbols and newlines to mimic human behavior.
+- **Multiple Themes**: Modern coding themes (Original, VSCode, Dracula, Midnight, and more).
+- **Format Flexibility**: Support for Vertical (9:16) for TikTok/Reels and Landscape for YouTube/Twitter.
+- **AI-Powered Titles**: Automatic video title generation based on your code using Gemini AI.
+- **Themed Dashboard**: Full history and render management with a custom, premium UI.
+- **High-Resolution Rendering**: Powered by Remotion for frame-perfect MP4 output.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS.
+- **Video Engine**: [Remotion](https://www.remotion.dev/) for programmatic video rendering.
+- **Backend/Storage**: Supabase (Authentication, PostgreSQL, and Bucket Storage).
+- **AI Engine**: Google Gemini for auto-titling.
+- **Styling**: Lucide Icons & Framer Motion for premium interactions.
 
-## Learn More
+## 🚀 Getting Started
 
-To learn more about Next.js, take a look at the following resources:
+### Prerequisites
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Node.js 18+ 
+- A Supabase project
+- A Google AI (Gemini) API key
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Installation
 
-## Deploy on Vercel
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/iChillyO/CodeTyper.git
+   cd CodeTyper/landing
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Environment Setup:**
+   Create a `.env.local` file in the root directory and add:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   GEMINI_API_KEY=your_gemini_key
+   ```
+
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+
+## 🎥 Rendering Engine
+
+The rendering is handled locally by Remotion. When a user requests a render, the server:
+1. Bundles the React composition.
+2. Calculates exact duration based on typing speed and code length.
+3. Renders frames into a high-quality `.mp4`.
+4. Uploads the final file to Supabase Storage.
+
+## 📄 License
+
+This project is for personal use and demonstration. For commercial use or redistribution, please check the license details.
+
+---
+Crafted with ❤️ by [iChillyO](https://github.com/iChillyO)
