@@ -9,7 +9,8 @@ interface NavbarProps {
 
 export async function Navbar({ isCreatePage = false }: NavbarProps) {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user;
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-10 py-5 bg-[var(--background)]/50 backdrop-blur-xl border-b border-[var(--border)]">

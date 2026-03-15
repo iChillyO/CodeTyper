@@ -1,5 +1,3 @@
-import { bundle } from '@remotion/bundler';
-import { getCompositions, renderMedia } from '@remotion/renderer';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -33,6 +31,10 @@ export const startRenderJob = async (params: RenderParams) => {
     try {
         console.log(`Starting render job for ${renderId}...`);
 
+        // Dynamically import Remotion heavy packages to avoid startup crashes in some environments
+        const { bundle } = await import('@remotion/bundler');
+        const { getCompositions, renderMedia } = await import('@remotion/renderer');
+
         // 1. Calculate duration
         const durationInFrames = calculateDuration(code, speedMs);
         console.log(`Calculated duration: ${durationInFrames} frames`);
@@ -40,7 +42,7 @@ export const startRenderJob = async (params: RenderParams) => {
         // 2. Bundle the project
         const bundleLocation = await bundle({
             entryPoint: path.resolve(process.cwd(), 'src/remotion/index.ts'),
-            webpackOverride: (config) => {
+            webpackOverride: (config: any) => {
                 return {
                     ...config,
                     cache: false, // Force rebuild, ignore webpack cache
@@ -69,9 +71,9 @@ export const startRenderJob = async (params: RenderParams) => {
             }
         });
 
-        const composition = comps.find((c) => c.id === 'CodeTyper');
+        const composition = comps.find((c: any) => c.id === 'CodeTyper');
         if (!composition) {
-            console.error("Available compositions:", comps.map(c => c.id));
+            console.error("Available compositions:", comps.map((c: any) => c.id));
             throw new Error(`No composition with the ID CodeTyper found.`);
         }
         
@@ -96,7 +98,7 @@ export const startRenderJob = async (params: RenderParams) => {
                 width,
                 height
             },
-            onProgress: ({ progress }) => {
+            onProgress: ({ progress }: { progress: number }) => {
                 const percent = Math.round(progress * 100);
                 console.log(`Rendering ${renderId}: ${percent}%`);
                 
