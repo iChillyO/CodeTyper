@@ -6,10 +6,12 @@ import os from 'os';
 import { createClient } from '@supabase/supabase-js';
 import { calculateDuration } from './video-utils';
 
-// Initialize a supabase service role client for backend operations
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Helper to get supabase client lazily
+const getSupabase = () => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    return createClient(supabaseUrl, supabaseKey);
+};
 
 interface RenderParams {
     userId: string;
@@ -26,6 +28,7 @@ interface RenderParams {
 
 export const startRenderJob = async (params: RenderParams) => {
     const { userId, renderId, title, code, language, speedMs, theme, cursorStyle, width, height } = params;
+    const supabase = getSupabase();
 
     try {
         console.log(`Starting render job for ${renderId}...`);
@@ -103,7 +106,7 @@ export const startRenderJob = async (params: RenderParams) => {
                     .from('renders')
                     .update({ progress: percent })
                     .eq('id', renderId)
-                    .then(({ error }) => {
+                    .then(({ error }: { error: any }) => {
                         if (error) console.warn(`Failed to update progress for ${renderId}:`, error.message);
                     });
             }
