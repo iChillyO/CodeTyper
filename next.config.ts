@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     "@remotion/bundler",
     "@remotion/renderer",
     "@rspack/core",
+    "@rspack/binding",
     "@rspack/binding-linux-x64-gnu",
     "@rspack/binding-linux-arm64-gnu",
   ]
