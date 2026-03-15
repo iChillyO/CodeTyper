@@ -34,7 +34,7 @@
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/iChillyO/CodeTyper.git
-   cd CodeTyper/landing
+   cd CodeTyper
    ```
 
 2. **Install dependencies:**
