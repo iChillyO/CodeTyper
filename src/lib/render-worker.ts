@@ -160,13 +160,21 @@ export const startRenderJob = async (params: RenderParams) => {
 
     } catch (error: any) {
         console.error(`Render Job ${renderId} failed:`, error);
+        
+        // Specific error message for common serverless issues
+        let failedReason = error.message || 'Unknown error during rendering';
+        if (failedReason.includes('rspack') || failedReason.includes('binding')) {
+            failedReason = "Asset bundling failed due to missing native binaries on Vercel. Consider using Remotion Lambda or a full server.";
+        } else if (failedReason.includes('browser') || failedReason.includes('executable')) {
+            failedReason = "Video rendering requires Chromium, which is missing on Vercel. Use Remotion Lambda for production.";
+        }
 
         // Update database with failed status
         await supabase
             .from('renders')
             .update({
                 status: 'failed',
-                failed_reason: error.message || 'Unknown error during rendering'
+                failed_reason: failedReason
             })
             .eq('id', renderId);
     }
