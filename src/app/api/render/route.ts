@@ -6,6 +6,11 @@ import { startRenderJob } from '@/lib/render-worker';
 
 export async function POST(req: Request) {
     try {
+        console.log("API /api/render: Checking environment variables...");
+        console.log("NEXT_PUBLIC_SUPABASE_URL present:", !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+        console.log("NEXT_PUBLIC_SUPABASE_ANON_KEY present:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+        console.log("SUPABASE_SERVICE_ROLE_KEY present:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+
         const supabase = await createClient();
 
         // 1. Authenticate user securely on the server

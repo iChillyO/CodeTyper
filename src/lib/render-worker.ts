@@ -7,7 +7,7 @@ const getSupabase = () => {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
-        throw new Error("Missing Supabase configuration (NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY)");
+        throw new Error(`Missing Supabase configuration. URL: ${!!supabaseUrl}, Key: ${!!supabaseKey}`);
     }
     
     return createClient(supabaseUrl, supabaseKey);
@@ -28,10 +28,11 @@ interface RenderParams {
 
 export const startRenderJob = async (params: RenderParams) => {
     const { userId, renderId, title, code, language, speedMs, theme, cursorStyle, width, height } = params;
-    const supabase = getSupabase();
+    let supabase: any = null;
 
     try {
-        console.log(`Starting Lambda render job for ${renderId}...`);
+        supabase = getSupabase();
+        console.log(`[Worker] Starting Lambda render job for ${renderId}...`);
 
         // Dynamically import the lightweight Client to avoid binary issues on Vercel
         // This MUST be the /client subpath (which uses @remotion/lambda-client internally)
@@ -133,17 +134,21 @@ export const startRenderJob = async (params: RenderParams) => {
         console.log(`Job ${renderId} successfully completed on Lambda!`);
 
     } catch (error: any) {
-        console.error(`Render Job ${renderId} failed:`, error);
+        console.error(`[Worker] Render Job ${renderId} failed:`, error);
         
         let failedReason = error.message || 'Unknown error during rendering';
         
         // Final fallback to make sure we always update the UI
-        await supabase
-            .from('renders')
-            .update({
-                status: 'failed',
-                failed_reason: failedReason
-            })
-            .eq('id', renderId);
+        if (supabase) {
+            await supabase
+                .from('renders')
+                .update({
+                    status: 'failed',
+                    failed_reason: failedReason
+                })
+                .eq('id', renderId);
+        } else {
+            console.error("[Worker] Cannot update DB because Supabase client failed to initialize.");
+        }
     }
 };
