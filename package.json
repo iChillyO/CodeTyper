@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "deploy:lambda": "remotion lambda functions deploy",
-    "deploy:site": "remotion lambda sites create src/remotion/index.ts --site-name=codetyper"
+    "deploy:lambda": "dotenv -e .env.local -- remotion lambda functions deploy",
+    "deploy:site": "dotenv -e .env.local -- remotion lambda sites create src/remotion/index.ts --site-name=codetyper"
   },
   "dependencies": {
     "@remotion/gif": "4.0.435",
@@ -42,6 +42,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.27",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.1.6",
     "postcss": "^8.5.8",
