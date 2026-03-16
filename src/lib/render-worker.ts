@@ -1,6 +1,3 @@
-import path from 'path';
-import fs from 'fs';
-import os from 'os';
 import { createClient } from '@supabase/supabase-js';
 import { calculateDuration } from './video-utils';
 
@@ -29,37 +26,40 @@ export const startRenderJob = async (params: RenderParams) => {
     const supabase = getSupabase();
 
     try {
-        console.log(`Starting render job for ${renderId}...`);
+        console.log(`Starting Lambda render job for ${renderId}...`);
 
-        // Dynamically import Remotion heavy packages to avoid startup crashes in some environments
-        const { bundle } = await import('@remotion/bundler');
-        const { getCompositions, renderMedia } = await import('@remotion/renderer');
+        // Dynamically import Lambda packages to avoid binary issues on Vercel at startup
+        const { 
+            renderMediaOnLambda, 
+            specializeFunction,
+            getRenderProgress
+        } = (await import('@remotion/lambda')) as any;
+
+        // Check for AWS credentials
+        if (!process.env.REMOTION_AWS_ACCESS_KEY_ID || !process.env.REMOTION_AWS_SECRET_ACCESS_KEY) {
+            throw new Error("AWS Credentials (REMOTION_AWS_ACCESS_KEY_ID/SECRET) are missing. Check your .env file or Vercel Environment Variables.");
+        }
+
+        const region = (process.env.REMOTION_AWS_REGION as any) || 'us-east-1';
+        const functionName = specializeFunction({
+            type: 'render',
+            region,
+        });
 
         // 1. Calculate duration
         const durationInFrames = calculateDuration(code, speedMs);
         console.log(`Calculated duration: ${durationInFrames} frames`);
 
-        // 2. Bundle the project
-        const bundleLocation = await bundle({
-            entryPoint: path.resolve(process.cwd(), 'src/remotion/index.ts'),
-            webpackOverride: (config: any) => {
-                return {
-                    ...config,
-                    cache: false, // Force rebuild, ignore webpack cache
-                    resolve: {
-                        ...config.resolve,
-                        alias: {
-                            ...(config.resolve?.alias || {}),
-                            '@': path.resolve(process.cwd(), 'src'),
-                        },
-                    },
-                };
-            },
-        });
-
-        // 3. Get composition
-        console.log("Fetching compositions...");
-        const comps = await getCompositions(bundleLocation, {
+        // 2. Define source and bucket
+        // Note: You must have deployed your site using `npm run deploy:site`
+        const siteName = 'codetyper'; 
+        
+        console.log("Triggering Lambda render...");
+        const { renderId: lambdaRenderId, bucketName } = await renderMediaOnLambda({
+            region,
+            functionName,
+            serveUrl: siteName,
+            composition: 'CodeTyper',
             inputProps: {
                 codeString: code,
                 language,
@@ -68,95 +68,64 @@ export const startRenderJob = async (params: RenderParams) => {
                 cursorStyle,
                 width,
                 height
-            }
-        });
-
-        const composition = comps.find((c: any) => c.id === 'CodeTyper');
-        if (!composition) {
-            console.error("Available compositions:", comps.map((c: any) => c.id));
-            throw new Error(`No composition with the ID CodeTyper found.`);
-        }
-        
-        // Override duration dynamically based on code length
-        composition.durationInFrames = durationInFrames;
-        
-        console.log(`Found composition ${composition.id}. Resolution: ${composition.width}x${composition.height}, Duration: ${composition.durationInFrames} frames`);
-
-        // 4. Render video
-        const tempOutputFile = path.join(os.tmpdir(), `${renderId}.mp4`);
-        await renderMedia({
-            composition,
-            serveUrl: bundleLocation,
+            },
             codec: 'h264',
-            outputLocation: tempOutputFile,
-            inputProps: {
-                codeString: code,
-                language,
-                baseDelayMs: speedMs,
-                theme,
-                cursorStyle,
-                width,
-                height
-            },
-            onProgress: ({ progress }: { progress: number }) => {
-                const percent = Math.round(progress * 100);
-                console.log(`Rendering ${renderId}: ${percent}%`);
-                
-                // Update database with current progress
-                // We wrap in try/catch to avoid failing the render if the progress column is missing
-                supabase
-                    .from('renders')
-                    .update({ progress: percent })
-                    .eq('id', renderId)
-                    .then(({ error }: { error: any }) => {
-                        if (error) console.warn(`Failed to update progress for ${renderId}:`, error.message);
-                    });
-            }
+            privacy: 'public',
+            frameRange: [0, durationInFrames - 1],
         });
 
-        console.log(`Render complete! Saved to ${tempOutputFile}`);
+        console.log(`Lambda render triggered! ID: ${lambdaRenderId}`);
 
-        // 5. Upload to Supabase Storage
-        console.log(`Uploading ${renderId} to Supabase...`);
-        const fileData = fs.readFileSync(tempOutputFile);
-
-        const storagePath = `${userId}/${renderId}.mp4`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('renders')
-            .upload(storagePath, fileData, {
-                contentType: 'video/mp4',
-                upsert: true
+        // 3. Poll for progress and completion
+        // Since we are running in a "background" Vercel function (hopefully triggered via waitUntil or similar),
+        // we can poll for a while. If it exceeds Vercel limits, the DB will stay in 'rendering' state.
+        
+        let isDone = false;
+        let lastProgress = -1;
+        
+        while (!isDone) {
+            const progress = await getRenderProgress({
+                renderId: lambdaRenderId,
+                bucketName,
+                region,
             });
 
-        if (uploadError) {
-            throw new Error(`Failed to upload to Supabase: ${uploadError.message}`);
+            if (progress.fatalErrorEncountered) {
+                throw new Error(`Lambda Render Failed: ${progress.errors[0]?.message || 'Unknown error'}`);
+            }
+
+            if (progress.done) {
+                console.log("Lambda render complete!");
+                const videoUrl = progress.outputFile as string;
+                
+                // Update database with success
+                await supabase
+                    .from('renders')
+                    .update({
+                        status: 'done',
+                        video_url: videoUrl,
+                        progress: 100
+                    })
+                    .eq('id', renderId);
+                
+                isDone = true;
+            } else {
+                const currentPercent = Math.round(progress.overallProgress * 100);
+                if (currentPercent !== lastProgress) {
+                    console.log(`Rendering ${renderId}: ${currentPercent}%`);
+                    await supabase
+                        .from('renders')
+                        .update({ progress: currentPercent })
+                        .eq('id', renderId);
+                    lastProgress = currentPercent;
+                }
+                
+                // Wait 2 seconds before next poll
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
         }
 
-        const { data: { publicUrl } } = supabase.storage
-            .from('renders')
-            .getPublicUrl(storagePath);
-
-        // 6. Update database with successful status
-        const { error: dbError } = await supabase
-            .from('renders')
-            .update({
-                status: 'done',
-                video_url: publicUrl,
-            })
-            .eq('id', renderId);
-
-        if (dbError) {
-            throw new Error(`Failed to update DB after render: ${dbError.message}`);
-        }
-
-        // Cleanup temp file
-        try {
-            fs.unlinkSync(tempOutputFile);
-        } catch (e) {
-            console.warn("Could not delete temp file", e);
-        }
-
-        console.log(`Job ${renderId} successfully completed!`);
+        console.log(`Job ${renderId} successfully completed on Lambda!`);
 
     } catch (error: any) {
         console.error(`Render Job ${renderId} failed:`, error);
