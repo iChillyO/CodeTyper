@@ -3,8 +3,13 @@ import { calculateDuration } from './video-utils';
 
 // Helper to get supabase client lazily
 const getSupabase = () => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+        throw new Error("Missing Supabase configuration (NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY)");
+    }
+    
     return createClient(supabaseUrl, supabaseKey);
 };
 
@@ -28,23 +33,23 @@ export const startRenderJob = async (params: RenderParams) => {
     try {
         console.log(`Starting Lambda render job for ${renderId}...`);
 
-        // Dynamically import Lambda packages to avoid binary issues on Vercel at startup
+        // Dynamically import the lightweight Client to avoid binary issues on Vercel
+        // This MUST be the /client subpath (which uses @remotion/lambda-client internally)
         const { 
             renderMediaOnLambda, 
-            specializeFunction,
             getRenderProgress
-        } = (await import('@remotion/lambda')) as any;
+        } = (await import('@remotion/lambda/client')) as any;
 
         // Check for AWS credentials
         if (!process.env.REMOTION_AWS_ACCESS_KEY_ID || !process.env.REMOTION_AWS_SECRET_ACCESS_KEY) {
-            throw new Error("AWS Credentials (REMOTION_AWS_ACCESS_KEY_ID/SECRET) are missing. Check your .env file or Vercel Environment Variables.");
+            throw new Error("AWS Credentials (REMOTION_AWS_ACCESS_KEY_ID/SECRET) are missing. Check your Vercel Environment Variables.");
         }
 
         const region = (process.env.REMOTION_AWS_REGION as any) || 'us-east-1';
-        const functionName = specializeFunction({
-            type: 'render',
-            region,
-        });
+        
+        // We hardcode the function name based on your successful deploy output.
+        // This avoids calling 'specializeFunction' which pulls in heavy dependencies.
+        const functionName = 'remotion-render-4-0-435-mem2048mb-disk2048mb-120sec';
 
         // 1. Calculate duration
         const durationInFrames = calculateDuration(code, speedMs);
