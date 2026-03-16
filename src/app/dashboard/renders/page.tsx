@@ -267,9 +267,12 @@ export default function RendersPage() {
                                                 </>
                                             )}
                                             <button
-                                                onClick={() => setConfirmDeleteId(render.id)}
+                                                onClick={() => {
+                                                    alert("Trash icon clicked for ID: " + render.id);
+                                                    setConfirmDeleteId(render.id);
+                                                }}
                                                 disabled={deletingId === render.id}
-                                                className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all ml-1"
+                                                className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all ml-1 border border-transparent hover:border-green-500/50"
                                                 title="Delete Render"
                                             >
                                                 {deletingId === render.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
@@ -333,7 +336,10 @@ export default function RendersPage() {
                                 Cancel
                             </button>
                             <button
-                                onClick={() => handleDelete(confirmDeleteId)}
+                                onClick={() => {
+                                    alert("Confirmation button clicked for ID: " + confirmDeleteId);
+                                    handleDelete(confirmDeleteId);
+                                }}
                                 disabled={!!deletingId}
                                 className="flex-1 h-11 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-sm font-bold transition-all shadow-lg shadow-red-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
                             >
