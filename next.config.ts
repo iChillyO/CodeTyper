@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     "@remotion/bundler",
     "@remotion/renderer",
+    "@remotion/lambda",
     "@rspack/core",
     "@rspack/binding",
     "@rspack/binding-linux-x64-gnu",
