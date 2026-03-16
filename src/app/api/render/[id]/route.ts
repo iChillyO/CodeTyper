@@ -1,9 +1,10 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const supabase = await createClient();
+        const adminSupabase = await createAdminClient();
 
         // 1. Authenticate user
         const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -54,18 +55,31 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
             }
         }
 
-        // 4. Delete the row from the database
-        const { error: deleteError } = await supabase
+        // 4. Delete the row from the database (Use admin client to bypass RLS)
+        const { error: deleteError, count } = await adminSupabase
             .from('renders')
-            .delete()
+            .delete({ count: 'exact' })
             .eq('id', renderId);
+
+        console.log(`DELETE operation for ${renderId}: count=${count}, error=${deleteError}`);
 
         if (deleteError) {
             console.error("Failed to delete render row:", deleteError);
             return NextResponse.json({ error: 'Failed to delete render record' }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true });
+        if (count === 0) {
+            console.warn(`DELETE attempted but 0 rows affected for ID: ${renderId}`);
+            // We might still return success if the row is already gone, 
+            // but let's be more descriptive for debugging.
+            return NextResponse.json({ 
+                success: true, 
+                message: "Row was not found or already deleted",
+                id: renderId 
+            });
+        }
+
+        return NextResponse.json({ success: true, deletedCount: count });
 
     } catch (error) {
         console.error("Unexpected error handling DELETE /api/render/[id]:", error);
