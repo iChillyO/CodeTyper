@@ -97,10 +97,13 @@ export default function RendersPage() {
     }
 
     const handleDelete = async (renderId: any) => {
-        if (!renderId || deletingId) return;
-        
         const idToDelete = typeof renderId === 'string' ? renderId : renderId?.id;
-        if (!idToDelete) return;
+        alert("Deleting ID: " + idToDelete);
+        
+        if (!idToDelete || deletingId) {
+            console.log("Delete blocked:", { idToDelete, deletingId });
+            return;
+        }
 
         setDeletingId(idToDelete)
         try {
