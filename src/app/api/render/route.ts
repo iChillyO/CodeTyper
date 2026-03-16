@@ -175,9 +175,9 @@ export async function POST(req: Request) {
             .update({ renders_used: usageData.renders_used + 1 })
             .eq('user_id', user.id);
 
-        // 8. Start Background Render Job
-        // We do not await this, so the API can respond quickly while the server continues processing.
-        startRenderJob({
+        // 8. Start Render Job (Triggering only)
+        // We await this to ensure the Lambda actually starts before responding
+        const renderResult = await startRenderJob({
             userId: user.id,
             renderId: newRender.id,
             title: renderTitle,
@@ -188,14 +188,16 @@ export async function POST(req: Request) {
             cursorStyle,
             width,
             height
-        }).catch((err) => {
-            console.error("Unhandled error in startRenderJob fallback:", err);
         });
 
-        // 9. Return success immediately
+        // 9. Return success with AWS info so client can help poll if needed
         return NextResponse.json({
             success: true,
-            render: newRender,
+            render: {
+                ...newRender,
+                lambdaRenderId: renderResult.lambdaRenderId,
+                bucketName: renderResult.bucketName
+            },
             usage: {
                 used: usageData.renders_used + 1,
                 limit: planConfig.rendersPerMonth

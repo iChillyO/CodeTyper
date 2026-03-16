@@ -127,19 +127,20 @@ export default function CreateClient() {
                 
                 // Start polling for completion
                 const renderId = data.render.id;
+                const lambdaId = data.render.lambdaRenderId;
+                const bucket = data.render.bucketName;
+
                 const pollInterval = setInterval(async () => {
-                    const { data: updatedRender } = await supabase
-                        .from('renders')
-                        .select('status, video_url, title, failed_reason, progress')
-                        .eq('id', renderId)
-                        .maybeSingle();
+                    // Call our new status endpoint which checks AWS and updates Supabase
+                    const res = await fetch(`/api/render/status?renderId=${renderId}&lambdaId=${lambdaId}&bucket=${bucket}`);
+                    const updatedRender = await res.json();
                     
                     if (updatedRender?.progress !== undefined) {
                         setRenderProgress(updatedRender.progress);
                     }
                     
-                    if (updatedRender?.status === 'done' && updatedRender.video_url) {
-                        setLastRenderedVideo({ url: updatedRender.video_url, title: updatedRender.title });
+                    if (updatedRender?.status === 'done' && updatedRender.url) {
+                        setLastRenderedVideo({ url: updatedRender.url, title: updatedRender.title || renderTitle });
                         setRenderMessage({
                             text: `Video ready! You can now download it.`,
                             type: 'success'
@@ -147,15 +148,15 @@ export default function CreateClient() {
                         setIsRendering(false);
                         setRenderProgress(100);
                         clearInterval(pollInterval);
-                    } else if (updatedRender?.status === 'failed') {
+                    } else if (updatedRender?.status === 'failed' || updatedRender?.status === 'error') {
                         setRenderMessage({
-                            text: `Rendering failed: ${updatedRender.failed_reason || 'Unknown error'}`,
+                            text: `Rendering failed: ${updatedRender.error || 'Unknown error'}`,
                             type: 'error'
                         });
                         setIsRendering(false);
                         clearInterval(pollInterval);
                     }
-                }, 2000);
+                }, 4000); // Polling every 4s is safer for rate limits
 
                 // Stop polling after 5 minutes (safety)
                 setTimeout(() => clearInterval(pollInterval), 300000);
