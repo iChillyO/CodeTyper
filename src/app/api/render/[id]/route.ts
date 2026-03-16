@@ -16,67 +16,50 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         const { id: renderId } = await params;
         console.log("DELETE request for renderId:", renderId, "by user:", user.id);
         
-        if (!renderId) {
-            return NextResponse.json({ error: 'Render ID is required' }, { status: 400 });
-        }
-
-        // 2. Verify ownership
-        const { data: renderDoc, error: fetchError } = await supabase
+        // 2. Verify ownership (Use adminSupabase to ensure we can see the row regardless of RLS)
+        const { data: renderDoc, error: fetchError } = await adminSupabase
             .from('renders')
             .select('id, user_id, video_url')
             .eq('id', renderId)
             .maybeSingle();
 
-        console.log("Fetch result for renderDoc:", renderDoc, "Error:", fetchError);
+        console.log(`[Delete] Verifying ownership for render ${renderId}. Found:`, !!renderDoc);
 
         if (fetchError || !renderDoc) {
             return NextResponse.json({ error: 'Render not found' }, { status: 404 });
         }
 
         if (renderDoc.user_id !== user.id) {
-            console.log("Ownership mismatch. renderDoc.user_id:", renderDoc.user_id, "user.id:", user.id);
-            return NextResponse.json({ 
-                error: 'Unauthorized (Ownership mismatch)',
-                debug: { rowUser: renderDoc.user_id, currentUser: user.id }
-            }, { status: 403 });
+            console.warn(`[Delete] Ownership mismatch. Render belongs to ${renderDoc.user_id}, but request from ${user.id}`);
+            return NextResponse.json({ error: 'Unauthorized to delete this render' }, { status: 403 });
         }
 
         // 3. Delete from Supabase Storage (if video exists)
         if (renderDoc.video_url) {
-            // we know from our worker that the file was saved as `${user.id}/${renderId}.mp4`
-            const storagePath = `${user.id}/${renderId}.mp4`;
-            const { error: storageError } = await supabase.storage
-                .from('renders')
-                .remove([storagePath]);
-
-            if (storageError) {
-                console.error("Failed to delete video from storage:", storageError);
-                // We'll proceed to delete the DB row anyway to clean up UI
+            try {
+                const storagePath = `${user.id}/${renderId}.mp4`;
+                await adminSupabase.storage
+                    .from('renders')
+                    .remove([storagePath]);
+            } catch (e) {
+                console.error("[Delete] Storage removal error:", e);
             }
         }
 
-        // 4. Delete the row from the database (Use admin client to bypass RLS)
+        // 4. Delete the row from the database
         const { error: deleteError, count } = await adminSupabase
             .from('renders')
             .delete({ count: 'exact' })
             .eq('id', renderId);
 
-        console.log(`DELETE operation for ${renderId}: count=${count}, error=${deleteError}`);
+        console.log(`[Delete] DB Result for ${renderId}: count=${count}, error=${deleteError}`);
 
         if (deleteError) {
-            console.error("Failed to delete render row:", deleteError);
             return NextResponse.json({ error: 'Failed to delete render record' }, { status: 500 });
         }
 
         if (count === 0) {
-            console.warn(`DELETE attempted but 0 rows affected for ID: ${renderId}`);
-            // We might still return success if the row is already gone, 
-            // but let's be more descriptive for debugging.
-            return NextResponse.json({ 
-                success: true, 
-                message: "Row was not found or already deleted",
-                id: renderId 
-            });
+            return NextResponse.json({ error: 'Delete failed: Row no longer exists' }, { status: 404 });
         }
 
         return NextResponse.json({ success: true, deletedCount: count });
