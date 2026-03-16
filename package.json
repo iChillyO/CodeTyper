@@ -15,9 +15,6 @@
     "@remotion/lambda": "^4.0.435",
     "@remotion/player": "4.0.435",
     "@remotion/tailwind-v4": "4.0.435",
-    "@rspack/binding-win32-x64-msvc": "^1.7.6",
-    "@rspack/binding-linux-arm64-gnu": "^1.7.6",
-    "@rspack/binding-linux-x64-gnu": "^1.7.6",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.98.0",
     "@tailwindcss/postcss": "^4.2.1",
@@ -35,7 +32,11 @@
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
   },
-  "optionalDependencies": {},
+  "optionalDependencies": {
+    "@rspack/binding-win32-x64-msvc": "^1.7.6",
+    "@rspack/binding-linux-arm64-gnu": "^1.7.6",
+    "@rspack/binding-linux-x64-gnu": "^1.7.6"
+  },
   "devDependencies": {
     "@remotion/cli": "4.0.435",
     "@types/node": "^25.5.0",
