@@ -26,6 +26,8 @@ interface RenderParams {
     height: number;
 }
 
+const REMOTION_FUNCTION_NAME = 'remotion-render-4-0-435-mem2048mb-disk2048mb-120sec';
+
 export const startRenderJob = async (params: RenderParams) => {
     const { userId, renderId, title, code, language, speedMs, theme, cursorStyle, width, height } = params;
     
@@ -41,7 +43,7 @@ export const startRenderJob = async (params: RenderParams) => {
         }
 
         const region = (process.env.REMOTION_AWS_REGION as any) || 'us-east-1';
-        const functionName = 'remotion-render-4-0-435-mem2048mb-disk2048mb-120sec';
+        const functionName = REMOTION_FUNCTION_NAME;
         const durationInFrames = calculateDuration(code, speedMs);
 
         const { renderId: lambdaRenderId, bucketName } = await renderMediaOnLambda({
@@ -89,6 +91,7 @@ export const startRenderJob = async (params: RenderParams) => {
 export const checkRenderProgress = async (renderId: string, lambdaId: string, bucket: string) => {
     const supabase = getSupabase();
     const region = (process.env.REMOTION_AWS_REGION as any) || 'us-east-1';
+    const functionName = REMOTION_FUNCTION_NAME;
 
     try {
         const { getRenderProgress } = (await import('@remotion/lambda/client')) as any;
@@ -97,6 +100,7 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
             renderId: lambdaId,
             bucketName: bucket,
             region,
+            functionName,
         });
 
         if (progress.fatalErrorEncountered) {
@@ -129,6 +133,19 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
         }
     } catch (error: any) {
         console.error(`[Worker] Progress check failed for ${renderId}:`, error);
+        
+        // If we have a persistent failure, mark the render as failed
+        // This avoids locking the user out via 409
+        try {
+            const supabase = getSupabase();
+            await supabase
+                .from('renders')
+                .update({ status: 'failed', failed_reason: `Progress check error: ${error.message}` })
+                .eq('id', renderId);
+        } catch (dbError) {
+            console.error("[Worker] Failed to update DB in progress failure catch:", dbError);
+        }
+
         return { status: 'error', error: error.message };
     }
 };

@@ -43,12 +43,12 @@ export async function POST(req: Request) {
         }
 
         // 2. Concurrency Guard: Check if a render is already in progress
+        const STUCK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
         const { data: activeRenders, error: activeCheckError } = await supabase
             .from('renders')
-            .select('id')
+            .select('id, created_at, status')
             .eq('user_id', user.id)
-            .in('status', ['queued', 'rendering'])
-            .limit(1);
+            .in('status', ['queued', 'rendering']);
 
         if (activeCheckError) {
             console.error("Error checking active renders:", activeCheckError);
@@ -56,9 +56,34 @@ export async function POST(req: Request) {
         }
 
         if (activeRenders && activeRenders.length > 0) {
-            return NextResponse.json({
-                error: 'A render is already in progress. Please wait for it to finish.'
-            }, { status: 409 });
+            // Check if any of these are "stuck"
+            const now = new Date();
+            const stuckRenders = activeRenders.filter(r => {
+                const createdAt = new Date(r.created_at);
+                return (now.getTime() - createdAt.getTime()) > STUCK_TIMEOUT_MS;
+            });
+
+            if (stuckRenders.length > 0) {
+                console.log(`Marking ${stuckRenders.length} stuck renders as failed.`);
+                // Update stuck renders to failed in the background
+                await supabase
+                    .from('renders')
+                    .update({ status: 'failed', failed_reason: 'Render timed out / was stuck' })
+                    .in('id', stuckRenders.map(r => r.id));
+                
+                // If ALL active renders were stuck, we can proceed
+                if (stuckRenders.length === activeRenders.length) {
+                    // All stuck, proceed
+                } else {
+                    return NextResponse.json({
+                        error: 'A render is already in progress. Please wait for it to finish.'
+                    }, { status: 409 });
+                }
+            } else {
+                return NextResponse.json({
+                    error: 'A render is already in progress. Please wait for it to finish.'
+                }, { status: 409 });
+            }
         }
 
         // 3. Load/Create Usage for current month
