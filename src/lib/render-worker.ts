@@ -113,7 +113,21 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
         }
 
         if (progress.done) {
-            const videoUrl = progress.outputFile as string;
+            let videoUrl = (progress.outputFile as string) || '';
+
+            // Fix potential malformed/path-style S3 URLs to virtual-hosted style for better DNS compatibility
+            if (videoUrl && videoUrl.includes('amazonaws.com') && !videoUrl.includes(`${bucket}.s3`)) {
+                try {
+                    const urlObj = new URL(videoUrl);
+                    // Force virtual-hosted style: https://${bucket}.s3.${region}.amazonaws.com/key
+                    videoUrl = `https://${bucket}.s3.${region}.amazonaws.com${urlObj.pathname}${urlObj.search}`;
+                    console.log(`[Worker] Reconstructed S3 URL to: ${videoUrl}`);
+                } catch (e) {
+                    console.error("[Worker] Failed to parse/fix S3 URL:", e);
+                }
+            }
+
+            console.log(`[Worker] Marking render ${renderId} as done. Video URL: ${videoUrl}`);
             await supabase
                 .from('renders')
                 .update({
@@ -122,6 +136,7 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
                     progress: 100
                 })
                 .eq('id', renderId);
+            
             return { status: 'done', url: videoUrl, progress: 100 };
         } else {
             const currentPercent = Math.round(progress.overallProgress * 100);
