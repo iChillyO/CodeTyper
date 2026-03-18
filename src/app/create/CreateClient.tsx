@@ -42,6 +42,7 @@ export default function CreateClient() {
 
     const [lastRenderedVideo, setLastRenderedVideo] = useState<{ url: string; title: string } | null>(null);
     const [isCopied, setIsCopied] = useState(false);
+    const [showFeedbackPopup, setShowFeedbackPopup] = useState(false);
 
     const currentFormat = FORMAT_CONFIG[format];
 
@@ -200,6 +201,9 @@ export default function CreateClient() {
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(blobUrl);
+
+            // Trigger feedback popup after a small delay
+            setTimeout(() => setShowFeedbackPopup(true), 1500);
         } catch (error) {
             // Fallback for CORS or other issues
             window.open(lastRenderedVideo.url, '_blank');
@@ -211,6 +215,9 @@ export default function CreateClient() {
             navigator.clipboard.writeText(lastRenderedVideo.url);
             setIsCopied(true);
             setTimeout(() => setIsCopied(false), 2000);
+            
+            // Trigger feedback popup
+            setTimeout(() => setShowFeedbackPopup(true), 1000);
         }
     };
 
@@ -647,6 +654,66 @@ export default function CreateClient() {
                     </div>
                 </div>
             </div>
+
+            {/* FEEDBACK POPUP */}
+            {showFeedbackPopup && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="bg-slate-900 border border-white/10 p-8 rounded-3xl shadow-[0_50px_100px_rgba(0,0,0,0.8)] max-w-md w-full relative overflow-hidden group"
+                    >
+                        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-600 to-electric-blue" />
+                        
+                        <button 
+                            onClick={() => setShowFeedbackPopup(false)}
+                            className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+                        >
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+
+                        <div className="text-center space-y-6">
+                            <div className="w-20 h-20 bg-electric-blue/10 rounded-2xl flex items-center justify-center mx-auto border border-electric-blue/20">
+                                <Sparkles className="w-10 h-10 text-electric-blue" />
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <h3 className="text-2xl font-black text-white">How was your video?</h3>
+                                <p className="text-slate-400 text-sm font-medium">Your feedback helps us make CodeTyper better for everyone.</p>
+                            </div>
+
+                            <div className="flex justify-center gap-3">
+                                {['😍', '😊', '😐', '😕'].map((emoji, i) => (
+                                    <button 
+                                        key={i} 
+                                        onClick={() => {
+                                            setShowFeedbackPopup(false);
+                                            setRenderMessage({ text: "Thanks for your feedback! ❤️", type: "success" });
+                                        }}
+                                        className="w-14 h-14 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl text-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="pt-4">
+                                <button 
+                                    onClick={() => setShowFeedbackPopup(false)}
+                                    className="text-slate-500 hover:text-slate-300 text-xs font-bold uppercase tracking-widest transition-colors"
+                                >
+                                    Maybe later
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Background Glow */}
+                        <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-electric-blue/5 blur-[80px] rounded-full pointer-events-none" />
+                    </motion.div>
+                </div>
+            )}
         </>
     );
 }
