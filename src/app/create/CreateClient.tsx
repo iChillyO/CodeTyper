@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Player } from "@remotion/player";
+import React, { useState, useRef } from "react";
+import { Player, PlayerRef } from "@remotion/player";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -33,9 +33,10 @@ export default function CreateClient() {
     const [activeTab, setActiveTab] = useState<'code' | 'preview'>('code');
     const [showHint, setShowHint] = useState(false);
 
-    // Render State
     const [isRendering, setIsRendering] = useState(false);
     const [renderProgress, setRenderProgress] = useState(0);
+    const [playbackProgress, setPlaybackProgress] = useState(0);
+    const playerRef = useRef<PlayerRef>(null);
     const [renderMessage, setRenderMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
     const [lastRenderedVideo, setLastRenderedVideo] = useState<{ url: string; title: string } | null>(null);
     const [isCopied, setIsCopied] = useState(false);
@@ -85,6 +86,7 @@ export default function CreateClient() {
 
     const handleRender = async () => {
         setIsRendering(true);
+        setRenderProgress(0);
         setRenderMessage(null);
         setLastRenderedVideo(null);
 
@@ -253,8 +255,25 @@ export default function CreateClient() {
                                     Uncompressed 4K Preview
                                 </div>
                             </div>
-                            <div className="p-0 bg-black aspect-video flex items-center justify-center overflow-hidden relative">
+                            <div className="p-0 bg-black aspect-video flex items-center justify-center overflow-hidden relative group/preview">
+                                {/* RENDER PROGRESS OVERLAY (Premium Processing State) */}
+                                {isRendering && (
+                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[4px] z-10 flex items-center justify-center animate-in fade-in duration-500">
+                                        <div className="flex flex-col items-center gap-6">
+                                            <div className="relative">
+                                                <div className="absolute inset-0 bg-electric-blue/20 blur-2xl rounded-full scale-150 animate-pulse" />
+                                                <Loader2 className="w-16 h-16 text-electric-blue animate-spin relative z-10" />
+                                            </div>
+                                            <div className="flex flex-col items-center gap-1">
+                                                <span className="text-white text-lg font-black uppercase tracking-[0.4em] drop-shadow-lg text-center">Processing</span>
+                                                <span className="text-electric-blue/60 text-[10px] font-black uppercase tracking-[0.2em]">GPU Engine Active</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <Player
+                                    ref={playerRef}
                                     component={MyComposition}
                                     durationInFrames={durationInFrames}
                                     compositionWidth={currentFormat.width}
@@ -262,6 +281,9 @@ export default function CreateClient() {
                                     fps={30}
                                     controls={true}
                                     clickToPlay={true}
+                                    onFrameUpdate={(frame) => {
+                                        setPlaybackProgress((frame / durationInFrames) * 100);
+                                    }}
                                     style={{
                                         width: "100%",
                                         height: "100%",
@@ -277,10 +299,44 @@ export default function CreateClient() {
                                         height: currentFormat.height
                                     }}
                                 />
-                                {/* Soft Inner Glow Overlay */}
-                                <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-electric-blue/5 to-transparent flex items-end justify-center pb-4">
-                                    <div className="w-1/2 h-1 bg-electric-blue shadow-[0_0_20px_rgba(59,130,246,0.5)] opacity-20 rounded-full" />
+
+                                {/* PREVIEW CONTEXT BAR (Always visible progress) */}
+                                <div className="absolute inset-x-0 bottom-0 p-6 pointer-events-none z-20">
+                                    <div className="flex flex-col gap-3">
+                                        {/* Dynamic Status Label */}
+                                        <div className="flex items-center justify-between px-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-2 h-2 rounded-full ${isRendering ? 'bg-electric-blue animate-pulse' : (playbackProgress > 0 ? 'bg-green-500' : 'bg-white/30')}`} />
+                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/70 drop-shadow-md">
+                                                    {isRendering ? 'Network Render' : 'Interactive Preview'}
+                                                </span>
+                                            </div>
+                                            {(isRendering || playbackProgress > 0) && (
+                                                <span className="text-[10px] font-bold tabular-nums text-electric-blue drop-shadow-xl bg-black/60 px-2 py-0.5 rounded border border-white/10">
+                                                    {isRendering ? `${renderProgress}%` : `${Math.round(playbackProgress)}%`}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* The Premium Unified Progress Bar */}
+                                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 backdrop-blur-md relative transition-all group-hover/preview:h-2">
+                                            <div 
+                                                className={`h-full transition-all duration-300 relative ${
+                                                    isRendering 
+                                                    ? 'bg-gradient-to-r from-blue-600 via-electric-blue to-blue-400 animate-pulse' 
+                                                    : 'bg-electric-blue shadow-[0_0_15px_rgba(0,210,255,0.4)]'
+                                                }`}
+                                                style={{ width: `${isRendering ? renderProgress : playbackProgress}%` }}
+                                            >
+                                                {/* Reflection Sheet */}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent" />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+
+                                {/* Atmosphere Overlay */}
+                                <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-60" />
                             </div>
                         </div>
 
