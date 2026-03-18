@@ -98,7 +98,6 @@ export default function RendersPage() {
 
     const handleDelete = async (renderId: any) => {
         const idToDelete = typeof renderId === 'string' ? renderId : renderId?.id;
-        alert("Deleting ID: " + idToDelete);
         
         if (!idToDelete || deletingId) {
             console.log("Delete blocked:", { idToDelete, deletingId });
@@ -113,22 +112,21 @@ export default function RendersPage() {
                 headers: { 'Content-Type': 'application/json' }
             });
             
+            const data = await res.json().catch(() => ({}));
+
             if (res.ok) {
+                alert(`Server says SUCCESS. Deleted count: ${data.deletedCount || 'unknown'}`);
                 // Optimistically remove from state immediately
                 setRenders(prev => prev.filter(r => r.id !== idToDelete));
                 setConfirmDeleteId(null);
-                
-                // We DON'T fetchRenders() here. Trusting the server's "OK" and our local state 
-                // prevents the "reappearing" bug caused by stale DB data/replication lag.
             } else {
-                const data = await res.json().catch(() => ({}));
                 console.error("Delete failed with status:", res.status, data);
-                alert(`Delete failed (Status ${res.status}): ${data.error || 'Unknown error'}`)
+                alert(`Server says FAILED: ${data.error || 'Unknown error'}`);
                 setConfirmDeleteId(null)
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Delete network error:", error);
-            alert('A network error occurred during deletion. Please check the console.')
+            alert(`Network ERROR during deletion: ${error.message}`);
             setConfirmDeleteId(null)
         } finally {
             setDeletingId(null)
