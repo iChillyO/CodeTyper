@@ -113,31 +113,73 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
         }
 
         if (progress.done) {
-            let videoUrl = (progress.outputFile as string) || '';
+            // 1. Get render data to know the user_id (needed for storage path)
+            const { data: renderData } = await supabase
+                .from('renders')
+                .select('user_id')
+                .eq('id', renderId)
+                .single();
 
-            // Fix potential malformed/path-style S3 URLs to virtual-hosted style for better DNS compatibility
-            if (videoUrl && videoUrl.includes('amazonaws.com') && !videoUrl.includes(`${bucket}.s3`)) {
-                try {
-                    const urlObj = new URL(videoUrl);
-                    // Force virtual-hosted style: https://${bucket}.s3.${region}.amazonaws.com/key
-                    videoUrl = `https://${bucket}.s3.${region}.amazonaws.com${urlObj.pathname}${urlObj.search}`;
-                    console.log(`[Worker] Reconstructed S3 URL to: ${videoUrl}`);
-                } catch (e) {
-                    console.error("[Worker] Failed to parse/fix S3 URL:", e);
-                }
+            if (!renderData) {
+                throw new Error(`Render record ${renderId} not found in database.`);
             }
 
-            console.log(`[Worker] Marking render ${renderId} as done. Video URL: ${videoUrl}`);
-            await supabase
-                .from('renders')
-                .update({
-                    status: 'done',
-                    video_url: videoUrl,
-                    progress: 100
-                })
-                .eq('id', renderId);
-            
-            return { status: 'done', url: videoUrl, progress: 100 };
+            console.log(`[Worker] Render ${renderId} finished on Lambda. Transferring to Supabase...`);
+
+            // 2. Download from S3 to local /tmp
+            const { downloadMedia } = (await import('@remotion/lambda')) as any;
+            const fs = await import('fs');
+            const path = await import('path');
+            const tempPath = path.join('/tmp', `${lambdaId}.mp4`);
+
+            try {
+                await downloadMedia({
+                    region,
+                    bucketName: bucket,
+                    renderId: lambdaId,
+                    outputPath: tempPath,
+                });
+
+                // 3. Upload to Supabase Storage
+                const fileBuffer = fs.readFileSync(tempPath);
+                const storagePath = `${renderData.user_id}/${renderId}.mp4`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('renders')
+                    .upload(storagePath, fileBuffer, {
+                        contentType: 'video/mp4',
+                        upsert: true
+                    });
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('renders')
+                    .getPublicUrl(storagePath);
+
+                console.log(`[Worker] Video uploaded to Supabase: ${publicUrl}`);
+
+                // 4. Update DB status
+                await supabase
+                    .from('renders')
+                    .update({
+                        status: 'done',
+                        video_url: publicUrl,
+                        progress: 100
+                    })
+                    .eq('id', renderId);
+
+                // Cleanup temp file
+                if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+
+                return { status: 'done', url: publicUrl, progress: 100 };
+
+            } catch (transferError: any) {
+                console.error("[Worker] Failed to transfer video from S3 to Supabase:", transferError);
+                // Cleanup temp file if it exists
+                if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+                throw transferError;
+            }
         } else {
             const currentPercent = Math.round(progress.overallProgress * 100);
             await supabase

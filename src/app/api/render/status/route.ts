@@ -23,7 +23,7 @@ export async function GET(req: Request) {
         // Verify the render belongs to the user
         const { data: render } = await supabase
             .from('renders')
-            .select('user_id, status')
+            .select('user_id, status, video_url, title')
             .eq('id', renderId)
             .single();
 
@@ -31,9 +31,13 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: 'Not found' }, { status: 404 });
         }
 
-        // If it's already done or failed in DB, don't ping AWS
+        // If it's already done or failed in DB, return that state immediately
         if (render.status === 'done' || render.status === 'failed') {
-            return NextResponse.json({ status: render.status });
+            return NextResponse.json({ 
+                status: render.status,
+                url: render.video_url,
+                title: render.title
+            });
         }
 
         // Check AWS for actual status and update DB
