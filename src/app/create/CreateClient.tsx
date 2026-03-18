@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { calculateDuration } from "@/lib/video-utils";
 import { Play, Download, Share2, Sparkles, Terminal, ChevronDown, Palette, Loader2, Copy, Check } from "lucide-react";
 import { VideoTheme, THEME_CONFIG } from "../../remotion/themes";
+import { motion } from "framer-motion";
 
 type VideoFormat = "9:16" | "16:9" | "1:1";
 

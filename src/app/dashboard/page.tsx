@@ -1,6 +1,6 @@
 'use client'
 
-import { Video, Zap, Plus, Clock, ExternalLink, ChevronRight, Loader2, Crown } from 'lucide-react'
+import { Video, Zap, Plus, Clock, ExternalLink, ChevronRight, Loader2, Crown, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -13,27 +13,57 @@ export default function DashboardOverview() {
     const [usage, setUsage] = useState<any>(null)
     const [renders, setRenders] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+
+    const fetchData = async () => {
+        // Usage
+        const { data: usageData } = await supabase
+            .from('usage')
+            .select('*')
+            .maybeSingle()
+        setUsage(usageData)
+
+        // Renders
+        const { data: rendersData } = await supabase
+            .from('renders')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(3)
+        setRenders(rendersData || [])
+        setLoading(false)
+    }
 
     useEffect(() => {
-        const fetchData = async () => {
-            // Usage
-            const { data: usageData } = await supabase
-                .from('usage')
-                .select('*')
-                .maybeSingle()
-            setUsage(usageData)
-
-            // Renders
-            const { data: rendersData } = await supabase
-                .from('renders')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(3)
-            setRenders(rendersData || [])
-            setLoading(false)
-        }
         fetchData()
     }, [])
+
+    const handleDelete = async (renderId: string) => {
+        if (deletingId) return;
+
+        setDeletingId(renderId)
+        try {
+            const res = await fetch(`/api/render/${renderId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (res.ok) {
+                // Optimistically remove from state
+                setRenders(prev => prev.filter(r => r.id !== renderId));
+                setConfirmDeleteId(null);
+            } else {
+                const data = await res.json().catch(() => ({}));
+                alert(`Delete failed: ${data.error || 'Unknown error'}`);
+                setConfirmDeleteId(null)
+            }
+        } catch (error: any) {
+            alert(`Network error during deletion.`);
+            setConfirmDeleteId(null)
+        } finally {
+            setDeletingId(null)
+        }
+    }
 
     const rendersUsed = usage?.renders_used || 0
     const planConfig = getPlanConfig(usage?.plan);
@@ -144,11 +174,21 @@ export default function DashboardOverview() {
                                         </div>
                                     </div>
                                 </div>
-                                {render.video_url && (
-                                    <Link href={render.video_url} target="_blank" className="p-2 text-white/20 hover:text-white transition-colors">
-                                        <ExternalLink size={18} />
-                                    </Link>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    {render.video_url && render.status === 'done' && (
+                                        <Link href={render.video_url} target="_blank" className="p-2 text-white/20 hover:text-white transition-colors" title="View video">
+                                            <ExternalLink size={18} />
+                                        </Link>
+                                    )}
+                                    <button
+                                        onClick={() => setConfirmDeleteId(render.id)}
+                                        disabled={deletingId === render.id}
+                                        className="p-2 text-white/20 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                                        title="Delete render"
+                                    >
+                                        {deletingId === render.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                                    </button>
+                                </div>
                             </div>
                         ))
                     ) : (
@@ -163,7 +203,43 @@ export default function DashboardOverview() {
                 </div>
             </div>
 
-
+            {/* Confirm Delete Modal */}
+            {confirmDeleteId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+                    <div className="relative w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col items-center text-center">
+                        <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-4">
+                            <Trash2 size={24} />
+                        </div>
+                        <h3 className="text-lg font-bold mb-2">Delete Video?</h3>
+                        <p className="text-sm text-white/50 mb-6">
+                            This action cannot be undone. The video will be permanently removed.
+                        </p>
+                        <div className="flex w-full gap-3">
+                            <button
+                                onClick={() => setConfirmDeleteId(null)}
+                                disabled={!!deletingId}
+                                className="flex-1 h-11 px-4 rounded-xl border border-white/10 text-sm font-bold hover:bg-white/5 transition-all disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleDelete(confirmDeleteId)}
+                                disabled={!!deletingId}
+                                className="flex-1 h-11 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-sm font-bold transition-all shadow-lg shadow-red-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {deletingId ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    'Delete'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

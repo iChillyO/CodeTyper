@@ -38,7 +38,7 @@ export async function POST(req: Request) {
             // In CreateClient, we set default title to `Render: ${firstLine}`
             // If the user hasn't changed it from the default pattern, let the AI override it
             if (renderTitle === 'Untitled Video' || renderTitle.startsWith('Render: ')) {
-                renderTitle = await generateTitle(code, 'javascript');
+                renderTitle = await generateTitle(code, language);
             }
         }
 
