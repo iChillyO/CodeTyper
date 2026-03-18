@@ -29,6 +29,7 @@ export default function RendersPage() {
     }
 
     useEffect(() => {
+        alert("RendersPage mounted - latest version!");
         fetchRenders()
     }, [])
 
