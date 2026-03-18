@@ -38,6 +38,8 @@ export default function CreateClient() {
     const [playbackProgress, setPlaybackProgress] = useState(0);
     const playerRef = useRef<PlayerRef>(null);
     const [renderMessage, setRenderMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+
     const [lastRenderedVideo, setLastRenderedVideo] = useState<{ url: string; title: string } | null>(null);
     const [isCopied, setIsCopied] = useState(false);
 
@@ -52,6 +54,19 @@ export default function CreateClient() {
 
 
     const durationInFrames = calculateDuration(code, speedMs);
+
+    // Sync Playback Progress
+    useEffect(() => {
+        const player = playerRef.current;
+        if (!player) return;
+
+        const handleFrameUpdate = (e: any) => {
+            setPlaybackProgress((e.detail.frame / durationInFrames) * 100);
+        };
+
+        player.addEventListener("frameupdate", handleFrameUpdate as any);
+        return () => player.removeEventListener("frameupdate", handleFrameUpdate as any);
+    }, [durationInFrames]);
 
     useEffect(() => {
         if (code) {
@@ -281,9 +296,6 @@ export default function CreateClient() {
                                     fps={30}
                                     controls={true}
                                     clickToPlay={true}
-                                    onFrameUpdate={(frame) => {
-                                        setPlaybackProgress((frame / durationInFrames) * 100);
-                                    }}
                                     style={{
                                         width: "100%",
                                         height: "100%",
