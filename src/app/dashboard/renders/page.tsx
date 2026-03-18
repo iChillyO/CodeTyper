@@ -29,7 +29,6 @@ export default function RendersPage() {
     }
 
     useEffect(() => {
-        alert("RendersPage mounted - latest version!");
         fetchRenders()
     }, [])
 
@@ -100,34 +99,26 @@ export default function RendersPage() {
     const handleDelete = async (renderId: any) => {
         const idToDelete = typeof renderId === 'string' ? renderId : renderId?.id;
         
-        if (!idToDelete || deletingId) {
-            console.log("Delete blocked:", { idToDelete, deletingId });
-            return;
-        }
+        if (!idToDelete || deletingId) return;
 
         setDeletingId(idToDelete)
         try {
-            console.log("Attempting to delete:", idToDelete);
             const res = await fetch(`/api/render/${idToDelete}`, { 
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' }
             });
             
-            const data = await res.json().catch(() => ({}));
-
             if (res.ok) {
-                alert(`Server says SUCCESS. Deleted count: ${data.deletedCount || 'unknown'}`);
                 // Optimistically remove from state immediately
                 setRenders(prev => prev.filter(r => r.id !== idToDelete));
                 setConfirmDeleteId(null);
             } else {
-                console.error("Delete failed with status:", res.status, data);
-                alert(`Server says FAILED: ${data.error || 'Unknown error'}`);
+                const data = await res.json().catch(() => ({}));
+                alert(`Delete failed: ${data.error || 'Unknown error'}`);
                 setConfirmDeleteId(null)
             }
         } catch (error: any) {
-            console.error("Delete network error:", error);
-            alert(`Network ERROR during deletion: ${error.message}`);
+            alert(`Network error during deletion.`);
             setConfirmDeleteId(null)
         } finally {
             setDeletingId(null)
@@ -266,12 +257,9 @@ export default function RendersPage() {
                                                 </>
                                             )}
                                             <button
-                                                onClick={() => {
-                                                    alert("Trash icon clicked for ID: " + render.id);
-                                                    setConfirmDeleteId(render.id);
-                                                }}
+                                                onClick={() => setConfirmDeleteId(render.id)}
                                                 disabled={deletingId === render.id}
-                                                className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all ml-1 border border-transparent hover:border-green-500/50"
+                                                className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all ml-1"
                                                 title="Delete Render"
                                             >
                                                 {deletingId === render.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
@@ -335,10 +323,7 @@ export default function RendersPage() {
                                 Cancel
                             </button>
                             <button
-                                onClick={() => {
-                                    alert("Confirmation button clicked for ID: " + confirmDeleteId);
-                                    handleDelete(confirmDeleteId);
-                                }}
+                                onClick={() => handleDelete(confirmDeleteId)}
                                 disabled={!!deletingId}
                                 className="flex-1 h-11 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-sm font-bold transition-all shadow-lg shadow-red-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
                             >
