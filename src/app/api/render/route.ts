@@ -7,9 +7,22 @@ import { startRenderJob } from '@/lib/render-worker';
 export async function POST(req: Request) {
     try {
         console.log("API /api/render: Checking environment variables...");
-        console.log("NEXT_PUBLIC_SUPABASE_URL present:", !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-        console.log("NEXT_PUBLIC_SUPABASE_ANON_KEY present:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-        console.log("SUPABASE_SERVICE_ROLE_KEY present:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+        const envVars = {
+            NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+            NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+            SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+            REMOTION_AWS_ACCESS_KEY_ID: !!process.env.REMOTION_AWS_ACCESS_KEY_ID,
+            REMOTION_AWS_SECRET_ACCESS_KEY: !!process.env.REMOTION_AWS_SECRET_ACCESS_KEY,
+            REMOTION_AWS_REGION: !!process.env.REMOTION_AWS_REGION,
+            GEMINI_API_KEY: !!process.env.GEMINI_API_KEY
+        };
+        console.log("Env Status:", envVars);
+
+        if (!process.env.REMOTION_AWS_ACCESS_KEY_ID || !process.env.REMOTION_AWS_SECRET_ACCESS_KEY) {
+            return NextResponse.json({ 
+                error: 'Server configuration missing. AWS credentials are not set on Vercel.' 
+            }, { status: 500 });
+        }
 
         const supabase = await createClient();
 
