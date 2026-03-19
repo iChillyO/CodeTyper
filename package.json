@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "deploy:lambda": "dotenv -e .env.local -- remotion lambda functions deploy --timeout=121",
+    "deploy:lambda": "dotenv -e .env.local -- remotion lambda functions deploy --timeout=121 --function-name=remotion-render-4-0-435-mem2048mb-disk2048mb-121sec-v2 --memory=2048 --disk=2048",
+    "delete:lambda": "dotenv -e .env.local -- remotion lambda functions delete --all",
     "deploy:site": "dotenv -e .env.local -- remotion lambda sites create src/remotion/index.ts --site-name=codetyper"
   },
   "dependencies": {
@@ -16,6 +17,8 @@
     "@remotion/lambda-client": "4.0.435",
     "@remotion/player": "4.0.435",
     "@remotion/tailwind-v4": "4.0.435",
+    "@remotion/renderer": "4.0.435",
+    "@remotion/bundler": "4.0.435",
     "@rspack/binding": "1.7.6",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.98.0",
@@ -51,6 +54,9 @@
     "@rspack/binding-linux-x64-gnu": "1.7.6",
     "@rspack/binding-linux-arm64-gnu": "1.7.6",
     "@rspack/binding-linux-x64-musl": "1.7.6",
-    "@rspack/binding-win32-x64-msvc": "1.7.6"
+    "@rspack/binding-linux-arm64-musl": "1.7.6",
+    "@rspack/binding-win32-x64-msvc": "1.7.6",
+    "@rspack/binding-win32-arm64-msvc": "1.7.6",
+    "@rspack/binding-win32-ia32-msvc": "1.7.6"
   }
 }
