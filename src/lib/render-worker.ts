@@ -26,7 +26,7 @@ interface RenderParams {
     height: number;
 }
 
-const REMOTION_FUNCTION_NAME = 'remotion-render-4-0-435-mem2048mb-disk2048mb-120sec';
+const REMOTION_FUNCTION_NAME = 'remotion-render-4-0-435-mem2048mb-disk2048mb-121sec';
 
 export const startRenderJob = async (params: RenderParams) => {
     const { userId, renderId, title, code, language, speedMs, theme, cursorStyle, width, height } = params;
