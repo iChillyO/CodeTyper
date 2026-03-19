@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { calculateDuration } from './video-utils';
+import { renderMediaOnLambda, getRenderProgress } from '@remotion/lambda/client';
 
 // Helper to get supabase client lazily
 const getSupabase = () => {
@@ -34,10 +35,6 @@ export const startRenderJob = async (params: RenderParams) => {
     try {
         console.log(`[Worker] Triggering Lambda render for ${renderId}...`);
 
-        const { 
-            renderMediaOnLambda, 
-        } = (await import('@remotion/lambda/client')) as any;
-
         if (!process.env.REMOTION_AWS_ACCESS_KEY_ID || !process.env.REMOTION_AWS_SECRET_ACCESS_KEY) {
             throw new Error("AWS Credentials missing in environment.");
         }
@@ -63,7 +60,6 @@ export const startRenderJob = async (params: RenderParams) => {
             codec: 'h264',
             privacy: 'public',
             frameRange: [0, durationInFrames - 1],
-            bundler: 'rspack',
         });
 
         console.log(`[Worker] Lambda triggered: ${lambdaRenderId}`);
@@ -95,8 +91,7 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
     const functionName = REMOTION_FUNCTION_NAME;
 
     try {
-        const { getRenderProgress } = (await import('@remotion/lambda/client')) as any;
-        
+
         const progress = await getRenderProgress({
             renderId: lambdaId,
             bucketName: bucket,
@@ -127,22 +122,20 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
 
             console.log(`[Worker] Render ${renderId} finished on Lambda. Transferring to Supabase...`);
 
-            // 2. Download from S3 to local /tmp
-            const { downloadMedia } = (await import('@remotion/lambda')) as any;
-            const fs = await import('fs');
-            const path = await import('path');
-            const tempPath = path.join('/tmp', `${lambdaId}.mp4`);
-
+            // 2. Download from S3 directly via URL
+            // This avoids loading the massive @remotion/lambda package in a Vercel Serverless Function
+            const s3Url = `https://${bucket}.s3.${region}.amazonaws.com/renders/${lambdaId}/out.mp4`;
+            
             try {
-                await downloadMedia({
-                    region,
-                    bucketName: bucket,
-                    renderId: lambdaId,
-                    outputPath: tempPath,
-                });
+                const response = await fetch(s3Url);
+                if (!response.ok) {
+                    throw new Error(`Failed to download video from AWS S3: ${response.status} ${response.statusText}`);
+                }
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const fileBuffer = Buffer.from(arrayBuffer);
 
                 // 3. Upload to Supabase Storage
-                const fileBuffer = fs.readFileSync(tempPath);
                 const storagePath = `${renderData.user_id}/${renderId}.mp4`;
 
                 const { error: uploadError } = await supabase.storage
@@ -170,15 +163,10 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
                     })
                     .eq('id', renderId);
 
-                // Cleanup temp file
-                if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-
                 return { status: 'done', url: publicUrl, progress: 100 };
 
             } catch (transferError: any) {
                 console.error("[Worker] Failed to transfer video from S3 to Supabase:", transferError);
-                // Cleanup temp file if it exists
-                if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
                 throw transferError;
             }
         } else {
