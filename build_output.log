@@ -1,0 +1,243 @@
+
+> codetyper@0.1.0 build
+> next build
+
+▲ Next.js 16.2.0 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 10 errors:
+./node_modules/@esbuild/win32-x64/README.md
+Unknown module type
+This module doesn't have an associated type. Use a known file extension, or register a loader for it.
+
+Read more: https://nextjs.org/docs/app/api-reference/next-config-js/turbo#webpack-loaders
+
+Import trace:
+  App Route:
+    ./node_modules/@esbuild/win32-x64/README.md
+    ./node_modules/esbuild/lib/main.js
+    ./node_modules/@remotion/bundler/dist/index.js
+    ./node_modules/@remotion/lambda/dist/esm/index.mjs
+    ./src/lib/render-worker.ts
+    ./src/app/api/render/status/route.ts
+
+
+./node_modules/@esbuild/win32-x64/esbuild.exe
+Unknown module type
+This module doesn't have an associated type. Use a known file extension, or register a loader for it.
+
+Read more: https://nextjs.org/docs/app/api-reference/next-config-js/turbo#webpack-loaders
+
+Import trace:
+  App Route:
+    ./node_modules/@esbuild/win32-x64/esbuild.exe
+    ./node_modules/esbuild/lib/main.js
+    ./node_modules/@remotion/bundler/dist/index.js
+    ./node_modules/@remotion/lambda/dist/esm/index.mjs
+    ./src/lib/render-worker.ts
+    ./src/app/api/render/status/route.ts
+
+
+./node_modules/@remotion/renderer/dist/compositor/get-executable-path.js:70:28
+Module not found: Can't resolve '@remotion/compositor-darwin-arm64'
+  [90m68 |[0m                     [36mreturn[0m require([32m'@remotion/compositor-darwin-x64'[0m).dir;
+  [90m69 |[0m                 [36mcase[0m [32m'arm64'[0m:
+[31m[1m>[0m [90m70 |[0m                     [36mreturn[0m require([32m'@remotion/compositor-darwin-arm64'[0m).dir;
+  [90m   |[0m                            [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m71 |[0m                 [36mdefault[0m:
+  [90m72 |[0m                     [36mthrow[0m [36mnew[0m [33mError[0m([32m`Unsupported architecture on macOS: [0m${process.arch[32m}`[0m);
+  [90m73 |[0m             }
+
+
+
+Import trace:
+  App Route:
+    ./node_modules/@remotion/renderer/dist/compositor/get-executable-path.js
+    ./node_modules/@remotion/renderer/dist/index.js
+    ./node_modules/@remotion/cli/dist/index.js
+    ./node_modules/@remotion/lambda/dist/esm/index.mjs
+    ./src/lib/render-worker.ts
+    ./src/app/api/render/status/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/@remotion/renderer/dist/esm/index.mjs:3932:18
+Module not found: Can't resolve '@remotion/compositor-darwin-arm64'
+  [90m3930 |[0m           [36mreturn[0m __require([32m"@remotion/compositor-darwin-x64"[0m).dir;
+  [90m3931 |[0m         [36mcase[0m [32m"arm64"[0m:
+[31m[1m>[0m [90m3932 |[0m           [36mreturn[0m __require([32m"@remotion/compositor-darwin-arm64"[0m).dir;
+  [90m     |[0m                  [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3933 |[0m         [36mdefault[0m:
+  [90m3934 |[0m           [36mthrow[0m [36mnew[0m [33mError[0m([32m`Unsupported architecture on macOS: [0m${process.arch[32m}`[0m);
+  [90m3935 |[0m       }
+
+
+
+Import trace:
+  App Route:
+    ./node_modules/@remotion/renderer/dist/esm/index.mjs
+    ./node_modules/@remotion/lambda/dist/esm/index.mjs
+    ./src/lib/render-worker.ts
+    ./src/app/api/render/status/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/@remotion/renderer/dist/compositor/get-executable-path.js:68:28
+Module not found: Can't resolve '@remotion/compositor-darwin-x64'
+  [90m66 |[0m             [36mswitch[0m (process.arch) {
+  [90m67 |[0m                 [36mcase[0m [32m'x64'[0m:
+[31m[1m>[0m [90m68 |[0m                     [36mreturn[0m require([32m'@remotion/compositor-darwin-x64'[0m).dir;
+  [90m   |[0m                            [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m69 |[0m                 [36mcase[0m [32m'arm64'[0m:
+  [90m70 |[0m                     [36mreturn[0m require([32m'@remotion/compositor-darwin-arm64'[0m).dir;
+  [90m71 |[0m                 [36mdefault[0m:
+
+
+
+Import trace:
+  App Route:
+    ./node_modules/@remotion/renderer/dist/compositor/get-executable-path.js
+    ./node_modules/@remotion/renderer/dist/index.js
+    ./node_modules/@remotion/cli/dist/index.js
+    ./node_modules/@remotion/lambda/dist/esm/index.mjs
+    ./src/lib/render-worker.ts
+    ./src/app/api/render/status/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/@remotion/renderer/dist/esm/index.mjs:3930:18
+Module not found: Can't resolve '@remotion/compositor-darwin-x64'
+  [90m3928 |[0m       [36mswitch[0m (process.arch) {
+  [90m3929 |[0m         [36mcase[0m [32m"x64"[0m:
+[31m[1m>[0m [90m3930 |[0m           [36mreturn[0m __require([32m"@remotion/compositor-darwin-x64"[0m).dir;
+  [90m     |[0m                  [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3931 |[0m         [36mcase[0m [32m"arm64"[0m:
+  [90m3932 |[0m           [36mreturn[0m __require([32m"@remotion/compositor-darwin-arm64"[0m).dir;
+  [90m3933 |[0m         [36mdefault[0m:
+
+
+
+Import trace:
+  App Route:
+    ./node_modules/@remotion/renderer/dist/esm/index.mjs
+    ./node_modules/@remotion/lambda/dist/esm/index.mjs
+    ./src/lib/render-worker.ts
+    ./src/app/api/render/status/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/@remotion/renderer/dist/compositor/get-executable-path.js:86:28
+Module not found: Can't resolve '@remotion/compositor-linux-arm64-gnu'
+  [90m84 |[0m                         [36mreturn[0m require([32m'@remotion/compositor-linux-arm64-musl'[0m).dir;
+  [90m85 |[0m                     }
+[31m[1m>[0m [90m86 |[0m                     [36mreturn[0m require([32m'@remotion/compositor-linux-arm64-gnu'[0m).dir;
+  [90m   |[0m                            [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m87 |[0m                 [36mdefault[0m:
+  [90m88 |[0m                     [36mthrow[0m [36mnew[0m [33mError[0m([32m`Unsupported architecture on Linux: [0m${process.arch[32m}`[0m);
+  [90m89 |[0m             }
+
+
+
+Import trace:
+  App Route:
+    ./node_modules/@remotion/renderer/dist/compositor/get-executable-path.js
+    ./node_modules/@remotion/renderer/dist/index.js
+    ./node_modules/@remotion/cli/dist/index.js
+    ./node_modules/@remotion/lambda/dist/esm/index.mjs
+    ./src/lib/render-worker.ts
+    ./src/app/api/render/status/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/@remotion/renderer/dist/esm/index.mjs:3948:18
+Module not found: Can't resolve '@remotion/compositor-linux-arm64-gnu'
+  [90m3946 |[0m             [36mreturn[0m __require([32m"@remotion/compositor-linux-arm64-musl"[0m).dir;
+  [90m3947 |[0m           }
+[31m[1m>[0m [90m3948 |[0m           [36mreturn[0m __require([32m"@remotion/compositor-linux-arm64-gnu"[0m).dir;
+  [90m     |[0m                  [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3949 |[0m         [36mdefault[0m:
+  [90m3950 |[0m           [36mthrow[0m [36mnew[0m [33mError[0m([32m`Unsupported architecture on Linux: [0m${process.arch[32m}`[0m);
+  [90m3951 |[0m       }
+
+
+
+Import trace:
+  App Route:
+    ./node_modules/@remotion/renderer/dist/esm/index.mjs
+    ./node_modules/@remotion/lambda/dist/esm/index.mjs
+    ./src/lib/render-worker.ts
+    ./src/app/api/render/status/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/@remotion/renderer/dist/compositor/get-executable-path.js:84:32
+Module not found: Can't resolve '@remotion/compositor-linux-arm64-musl'
+  [90m82 |[0m                 [36mcase[0m [32m'arm64'[0m:
+  [90m83 |[0m                     [36mif[0m (musl) {
+[31m[1m>[0m [90m84 |[0m                         [36mreturn[0m require([32m'@remotion/compositor-linux-arm64-musl'[0m).dir;
+  [90m   |[0m                                [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m85 |[0m                     }
+  [90m86 |[0m                     [36mreturn[0m require([32m'@remotion/compositor-linux-arm64-gnu'[0m).dir;
+  [90m87 |[0m                 [36mdefault[0m:
+
+
+
+Import trace:
+  App Route:
+    ./node_modules/@remotion/renderer/dist/compositor/get-executable-path.js
+    ./node_modules/@remotion/renderer/dist/index.js
+    ./node_modules/@remotion/cli/dist/index.js
+    ./node_modules/@remotion/lambda/dist/esm/index.mjs
+    ./src/lib/render-worker.ts
+    ./src/app/api/render/status/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/@remotion/renderer/dist/esm/index.mjs:3946:20
+Module not found: Can't resolve '@remotion/compositor-linux-arm64-musl'
+  [90m3944 |[0m         [36mcase[0m [32m"arm64"[0m:
+  [90m3945 |[0m           [36mif[0m (musl) {
+[31m[1m>[0m [90m3946 |[0m             [36mreturn[0m __require([32m"@remotion/compositor-linux-arm64-musl"[0m).dir;
+  [90m     |[0m                    [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3947 |[0m           }
+  [90m3948 |[0m           [36mreturn[0m __require([32m"@remotion/compositor-linux-arm64-gnu"[0m).dir;
+  [90m3949 |[0m         [36mdefault[0m:
+
+
+
+Import trace:
+  App Route:
+    ./node_modules/@remotion/renderer/dist/esm/index.mjs
+    ./node_modules/@remotion/lambda/dist/esm/index.mjs
+    ./src/lib/render-worker.ts
+    ./src/app/api/render/status/route.ts
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at ./node_modules/ (remotion/renderer/dist/compositor/get-executable-path.js:70:28)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at ./node_modules/ (remotion/renderer/dist/esm/index.mjs:3932:18)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at ./node_modules/ (remotion/renderer/dist/compositor/get-executable-path.js:68:28)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at ./node_modules/ (remotion/renderer/dist/esm/index.mjs:3930:18)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at ./node_modules/ (remotion/renderer/dist/compositor/get-executable-path.js:86:28)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at ./node_modules/ (remotion/renderer/dist/esm/index.mjs:3948:18)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at ./node_modules/ (remotion/renderer/dist/compositor/get-executable-path.js:84:32)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at ./node_modules/ (remotion/renderer/dist/esm/index.mjs:3946:20)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
