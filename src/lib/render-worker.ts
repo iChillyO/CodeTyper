@@ -63,6 +63,7 @@ export const startRenderJob = async (params: RenderParams) => {
             codec: 'h264',
             privacy: 'public',
             frameRange: [0, durationInFrames - 1],
+            bundler: 'rspack',
         });
 
         console.log(`[Worker] Lambda triggered: ${lambdaRenderId}`);
