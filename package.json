@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "deploy:lambda": "dotenv -e .env.local -- remotion lambda functions deploy --timeout=121 --function-name=remotion-render-4-0-435-mem2048mb-disk2048mb-121sec-v2 --memory=2048 --disk=2048",
-    "delete:lambda": "dotenv -e .env.local -- remotion lambda functions delete --all",
+    "deploy:lambda": "dotenv -e .env.local -- remotion lambda functions deploy --timeout=122 --memory=2048 --disk=2048",
+    "delete:lambda": "dotenv -e .env.local -- remotion lambda functions rmall",
     "deploy:site": "dotenv -e .env.local -- remotion lambda sites create src/remotion/index.ts --site-name=codetyper"
   },
   "dependencies": {

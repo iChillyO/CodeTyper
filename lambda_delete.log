@@ -1,0 +1,20 @@
+
+> codetyper@0.1.0 delete:lambda
+> dotenv -e .env.local -- remotion lambda functions delete --all
+
+[31mSubcommand delete not found.[39m
+remotion lambda functions <subcommand>
+
+Available subcommands:
+
+remotion lambda functions ls
+[90mLists the functions currently deployed[39m
+
+remotion lambda functions deploy
+[90mDeploy a new Lambda function[39m
+
+remotion lambda functions rm <function-name>
+[90mDelete a Lambda function[39m
+
+remotion lambda functions rmall
+[90mDelete all functions in selected region[39m

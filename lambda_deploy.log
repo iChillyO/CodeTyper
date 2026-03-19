@@ -1,0 +1,13 @@
+
+> codetyper@0.1.0 deploy:lambda
+> dotenv -e .env.local -- remotion lambda functions deploy --timeout=121 --function-name=remotion-render-4-0-435-mem2048mb-disk2048mb-121sec-v2 --memory=2048 --disk=2048
+
+[90mRegion = us-east-1[39m
+[90mMemory = 2048MB[39m
+[90mDisk size = 2048MB[39m
+[90mTimeout = 121sec[39m
+[90mVersion = 4.0.435[39m
+[90mCloudWatch Logging Enabled = true[39m
+[90mCloudWatch Retention Period = 14 days[39m
+[90mLambda Insights Enabled = false[39m
+Deploying Lambda...[19DAlready exists as remotion-render-4-0-435-mem2048mb-disk2048mb-121sec
