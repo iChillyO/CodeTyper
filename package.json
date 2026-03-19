@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "deploy:lambda": "dotenv -e .env.local -- remotion lambda functions deploy",
+    "deploy:lambda": "dotenv -e .env.local -- remotion lambda functions deploy --timeout=121",
     "deploy:site": "dotenv -e .env.local -- remotion lambda sites create src/remotion/index.ts --site-name=codetyper"
   },
   "dependencies": {
