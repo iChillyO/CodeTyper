@@ -2,7 +2,7 @@
 
 **CodeTyper** is a premium web application that transforms your code snippets into cinematic, high-quality videos—perfect for sharing on social media, tutorials, or documentation.
 
-![Project Preview](https://github.com/iChillyO/CodeTyper/blob/main/public/og-image.png?raw=true)
+
 
 ## ✨ Features
 
