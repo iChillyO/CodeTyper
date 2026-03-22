@@ -6,11 +6,11 @@ import { renderMediaOnLambda, getRenderProgress } from '@remotion/lambda/client'
 const getSupabase = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
+
     if (!supabaseUrl || !supabaseKey) {
         throw new Error(`Missing Supabase configuration. URL: ${!!supabaseUrl}, Key: ${!!supabaseKey}`);
     }
-    
+
     return createClient(supabaseUrl, supabaseKey);
 };
 
@@ -31,7 +31,7 @@ const REMOTION_FUNCTION_NAME = 'remotion-render-4-0-435-mem2048mb-disk2048mb-122
 
 export const startRenderJob = async (params: RenderParams) => {
     const { userId, renderId, title, code, language, speedMs, theme, cursorStyle, width, height } = params;
-    
+
     try {
         console.log(`[Worker] Triggering Lambda render for ${renderId}...`);
 
@@ -63,7 +63,7 @@ export const startRenderJob = async (params: RenderParams) => {
         });
 
         console.log(`[Worker] Lambda triggered: ${lambdaRenderId}`);
-        
+
         // Return these so the API can give them to the client
         return { lambdaRenderId, bucketName };
 
@@ -125,13 +125,13 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
             // 2. Download from S3 directly via URL
             // This avoids loading the massive @remotion/lambda package in a Vercel Serverless Function
             const s3Url = `https://${bucket}.s3.${region}.amazonaws.com/renders/${lambdaId}/out.mp4`;
-            
+
             try {
                 const response = await fetch(s3Url);
                 if (!response.ok) {
                     throw new Error(`Failed to download video from AWS S3: ${response.status} ${response.statusText}`);
                 }
-                
+
                 const arrayBuffer = await response.arrayBuffer();
                 const fileBuffer = Buffer.from(arrayBuffer);
 
@@ -179,7 +179,7 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
         }
     } catch (error: any) {
         console.error(`[Worker] Progress check failed for ${renderId}:`, error);
-        
+
         // If we have a persistent failure, mark the render as failed
         // This avoids locking the user out via 409
         try {
