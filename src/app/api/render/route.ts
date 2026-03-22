@@ -104,6 +104,7 @@ export async function POST(req: Request) {
         const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
 
+        // eslint-disable-next-line prefer-const
         let { data: usageData, error: usageError } = await supabase
             .from('usage')
             .select('*')
