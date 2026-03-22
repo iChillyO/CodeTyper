@@ -2,7 +2,7 @@
 
 **CodeTyper** is a premium web application that transforms your code snippets into cinematic, high-quality videos—perfect for sharing on social media, tutorials, or documentation.
 
-![Project Preview](https://github.com/iChillyO/CodeTyper/blob/main/public/preview.png?raw=true)
+![Project Preview](https://github.com/iChillyO/CodeTyper/blob/main/public/og-image.png?raw=true)
 
 ## ✨ Features
 
@@ -15,8 +15,8 @@
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS.
-- **Video Engine**: [Remotion](https://www.remotion.dev/) for programmatic video rendering.
+- **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS (Deployed on Vercel).
+- **Video Engine**: [Remotion](https://www.remotion.dev/) serverless rendering on AWS Lambda.
 - **Backend/Storage**: Supabase (Authentication, PostgreSQL, and Bucket Storage).
 - **AI Engine**: Google Gemini for auto-titling.
 - **Styling**: Lucide Icons & Framer Motion for premium interactions.
@@ -58,11 +58,12 @@
 
 ## 🎥 Rendering Engine
 
-The rendering is handled locally by Remotion. When a user requests a render, the server:
-1. Bundles the React composition.
-2. Calculates exact duration based on typing speed and code length.
-3. Renders frames into a high-quality `.mp4`.
-4. Uploads the final file to Supabase Storage.
+To ensure high availability and scalability, the rendering engine is deployed serverless on AWS Lambda using `@remotion/lambda`. When a user requests a render, the application:
+1. Triggers the AWS Lambda function with the React composition props.
+2. The Lambda runner bundles the composition utilizing `rspack`.
+3. Calculates exact duration based on typing speed and code length.
+4. Renders the frames in parallel into a high-quality `.mp4`.
+5. Uploads the final video directly to Supabase Storage for immediate download.
 
 ## 📄 License
 
