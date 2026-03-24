@@ -60,6 +60,11 @@ export const startRenderJob = async (params: RenderParams) => {
             codec: 'h264',
             privacy: 'public',
             frameRange: [0, durationInFrames - 1],
+            // Limit Lambda concurrency: keeps total invocations within AWS account's
+            // default burst limit (as low as 10 for newer accounts).
+            // framesPerLambda=150 → a 5-min video (~9000 frames) uses only 60 renderers.
+            // A typical code video (~300 frames) uses just 2 renderers + 1 orchestrator.
+            framesPerLambda: 150,
         });
 
         console.log(`[Worker] Lambda triggered: ${lambdaRenderId}`);
