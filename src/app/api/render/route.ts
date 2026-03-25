@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { generateTitle } from '@/lib/geminiTitle';
 import { getPlanConfig } from '@/lib/plans';
 import { startRenderJob } from '@/lib/render-worker';
+import { trackServer } from '@/lib/analytics-server';
 
 export async function POST(req: Request) {
     try {
@@ -84,6 +85,8 @@ export async function POST(req: Request) {
                     .update({ status: 'failed', failed_reason: 'Render timed out / was stuck' })
                     .in('id', stuckRenders.map(r => r.id));
                 
+                trackServer(user.id, 'render_stuck_detected', { count: stuckRenders.length });
+                
                 // If ALL active renders were stuck, we can proceed
                 if (stuckRenders.length === activeRenders.length) {
                     // All stuck, proceed
@@ -93,6 +96,7 @@ export async function POST(req: Request) {
                     }, { status: 409 });
                 }
             } else {
+                trackServer(user.id, 'render_concurrency_blocked', { active_count: activeRenders.length });
                 return NextResponse.json({
                     error: 'A render is already in progress. Please wait for it to finish.'
                 }, { status: 409 });
@@ -160,6 +164,11 @@ export async function POST(req: Request) {
         // 4. Prevent rendering if over the plan limit
         const planConfig = getPlanConfig(usageData.plan);
         if (usageData.renders_used >= planConfig.rendersPerMonth) {
+            trackServer(user!.id, 'render_limit_reached', { 
+                plan: usageData.plan, 
+                used: usageData.renders_used, 
+                limit: planConfig.rendersPerMonth 
+            });
             return NextResponse.json({
                 error: `Monthly limit reached for ${planConfig.name} plan (${planConfig.rendersPerMonth} renders).`
             }, { status: 403 });
@@ -227,6 +236,13 @@ export async function POST(req: Request) {
             cursorStyle,
             width,
             height
+        });
+
+        trackServer(user!.id, 'render_job_queued', { 
+            render_id: newRender.id, 
+            theme, 
+            format, 
+            plan: usageData.plan 
         });
 
         // 9. Return success with AWS info so client can help poll if needed

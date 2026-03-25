@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import { TransformationSection } from "@/components/TransformationSection";
 import { WallOfLove } from "@/components/WallOfLove";
 import { StickyMobileCTA } from "@/components/StickyMobileCTA";
+import { track } from "@/lib/analytics";
 
 export default function LandingClient() {
     const [typingText, setTypingText] = useState("");
@@ -49,7 +50,10 @@ export default function LandingClient() {
 
                         <div className="flex flex-col sm:flex-row gap-4 mb-8 w-full lg:w-auto">
                             <Link href="/create" className="flex-1 sm:flex-initial">
-                                <button className="h-16 w-full sm:w-64 rounded-2xl btn-primary text-xl font-black shadow-[0_20px_50px_rgba(59,130,246,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+                                <button
+                                    onClick={() => track('landing_cta_clicked', { location: 'hero' })}
+                                    className="h-16 w-full sm:w-64 rounded-2xl btn-primary text-xl font-black shadow-[0_20px_50px_rgba(59,130,246,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                                >
                                     Generate Video
                                     <ArrowRight className="w-6 h-6" />
                                 </button>
@@ -224,7 +228,10 @@ export default function LandingClient() {
                 <div className="max-w-4xl mx-auto text-center z-10 relative">
                     <h2 className="text-5xl md:text-7xl font-black mb-10 tracking-tight leading-none">Start Turning Your <br /> Code Into Content.</h2>
                     <Link href="/create">
-                        <button className="h-20 px-16 rounded-2xl btn-primary text-2xl font-black shadow-[0_0_50px_rgba(59,130,246,0.3)] hover:scale-105 transition-all">
+                        <button
+                            onClick={() => track('landing_cta_clicked', { location: 'bottom' })}
+                            className="h-20 px-16 rounded-2xl btn-primary text-2xl font-black shadow-[0_0_50px_rgba(59,130,246,0.3)] hover:scale-105 transition-all"
+                        >
                             Generate Video
                         </button>
                     </Link>

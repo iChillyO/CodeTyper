@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { calculateDuration } from './video-utils';
 import { renderMediaOnLambda, getRenderProgress } from '@remotion/lambda/client';
+import { trackServer } from './analytics-server';
 
 // Helper to get supabase client lazily
 const getSupabase = () => {
@@ -82,6 +83,11 @@ export const startRenderJob = async (params: RenderParams) => {
                 failed_reason: error.message || 'Trigger failed'
             })
             .eq('id', renderId);
+        
+        trackServer(userId, 'lambda_trigger_failed', { 
+            render_id: renderId, 
+            error: error.message || 'Trigger failed' 
+        });
         throw error;
     }
 };
@@ -110,6 +116,12 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
                 .from('renders')
                 .update({ status: 'failed', failed_reason: error })
                 .eq('id', renderId);
+
+            trackServer(null, 'render_failed', { 
+                render_id: renderId, 
+                error, 
+                source: 'lambda' 
+            });
             return { status: 'failed', error };
         }
 
@@ -150,7 +162,13 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
                         upsert: true
                     });
 
-                if (uploadError) throw uploadError;
+                if (uploadError) {
+                    trackServer(renderData.user_id, 'supabase_write_failed', { 
+                        render_id: renderId, 
+                        error: uploadError.message 
+                    });
+                    throw uploadError;
+                }
 
                 const { data: { publicUrl } } = supabase.storage
                     .from('renders')
@@ -167,6 +185,11 @@ export const checkRenderProgress = async (renderId: string, lambdaId: string, bu
                         progress: 100
                     })
                     .eq('id', renderId);
+
+                trackServer(renderData.user_id, 'render_completed', { 
+                    render_id: renderId, 
+                    source: 'lambda' 
+                });
 
                 return { status: 'done', url: publicUrl, progress: 100 };
 

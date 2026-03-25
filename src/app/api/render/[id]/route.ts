@@ -1,5 +1,6 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { trackServer } from '@/lib/analytics-server';
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -61,6 +62,8 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         if (count === 0) {
             return NextResponse.json({ error: 'Delete failed: Row no longer exists' }, { status: 404 });
         }
+
+        trackServer(user!.id, 'video_deleted', { render_id: renderId });
 
         return NextResponse.json({ success: true, deletedCount: count });
 

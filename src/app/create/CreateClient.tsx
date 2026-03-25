@@ -12,6 +12,7 @@ import { calculateDuration } from "@/lib/video-utils";
 import { Play, Download, Share2, Sparkles, Terminal, ChevronDown, Palette, Loader2, Copy, Check } from "lucide-react";
 import { VideoTheme, THEME_CONFIG } from "../../remotion/themes";
 import { motion } from "framer-motion";
+import { track } from "@/lib/analytics";
 
 type VideoFormat = "9:16" | "16:9" | "1:1";
 
@@ -33,6 +34,11 @@ export default function CreateClient() {
     const [cursorStyle, setCursorStyle] = useState<"block" | "bar" | "line">("block");
     const [activeTab, setActiveTab] = useState<'code' | 'preview'>('code');
     const [showHint, setShowHint] = useState(false);
+
+    // Track page view
+    useEffect(() => {
+        track('video_create_clicked', { source: 'client', location: 'create_page' });
+    }, []);
 
     const [isRendering, setIsRendering] = useState(false);
     const [renderProgress, setRenderProgress] = useState(0);
@@ -106,6 +112,12 @@ export default function CreateClient() {
         setRenderProgress(0);
         setRenderMessage(null);
         setLastRenderedVideo(null);
+        track('render_started', { 
+            theme, 
+            format, 
+            speed_ms: speedMs,
+            code_length: code.length
+        });
 
         try {
             // Get first line of code as title, or default
@@ -156,6 +168,13 @@ export default function CreateClient() {
                     
                     if (updatedRender?.progress !== undefined) {
                         setRenderProgress(updatedRender.progress);
+                        // Track progress occasionally to avoid overwhelming the server
+                        if (updatedRender.progress % 20 === 0 && updatedRender.progress < 100) {
+                            track('render_progress_polled', { 
+                                render_id: renderId, 
+                                progress: updatedRender.progress 
+                            });
+                        }
                     }
                     
                     if (updatedRender?.status === 'done' && updatedRender.url) {
@@ -166,11 +185,21 @@ export default function CreateClient() {
                         });
                         setIsRendering(false);
                         setRenderProgress(100);
+                        track('render_completed', { 
+                            render_id: renderId, 
+                            theme, 
+                            format,
+                            duration_frames: durationInFrames
+                        });
                         clearInterval(pollInterval);
                     } else if (updatedRender?.status === 'failed' || updatedRender?.status === 'error') {
                         setRenderMessage({
                             text: `Rendering failed: ${updatedRender.error || 'Unknown error'}`,
                             type: 'error'
+                        });
+                        track('render_failed', { 
+                            render_id: renderId, 
+                            error: updatedRender.error || 'Unknown error' 
                         });
                         setIsRendering(false);
                         clearInterval(pollInterval);
@@ -180,8 +209,9 @@ export default function CreateClient() {
                 // Stop polling after 5 minutes (safety)
                 setTimeout(() => clearInterval(pollInterval), 300000);
             }
-        } catch (error) {
+        } catch (error: any) {
             setRenderMessage({ text: 'An unexpected error occurred.', type: 'error' });
+            track('render_failed', { error: error?.message || 'Unexpected error' });
         } finally {
             setIsRendering(false);
         }
@@ -189,6 +219,7 @@ export default function CreateClient() {
 
     const handleDownload = async () => {
         if (!lastRenderedVideo?.url) return;
+        track('video_downloaded', { title: lastRenderedVideo.title });
         
         try {
             const response = await fetch(lastRenderedVideo.url);
@@ -215,6 +246,7 @@ export default function CreateClient() {
         if (lastRenderedVideo?.url) {
             navigator.clipboard.writeText(lastRenderedVideo.url);
             setIsCopied(true);
+            track('video_link_copied', { title: lastRenderedVideo.title });
             setTimeout(() => setIsCopied(false), 2000);
             
             // Trigger feedback popup
@@ -483,7 +515,11 @@ export default function CreateClient() {
                                         </div>
                                         <select
                                             value={theme}
-                                            onChange={(e) => setTheme(e.target.value as VideoTheme)}
+                                            onChange={(e) => {
+                                                const newTheme = e.target.value as VideoTheme;
+                                                setTheme(newTheme);
+                                                track('theme_selected', { theme: newTheme });
+                                            }}
                                             className="w-full h-12 pl-12 pr-10 bg-slate-900 border border-white/5 rounded-xl text-sm font-bold appearance-none focus:outline-none focus:border-electric-blue/50 focus:ring-1 focus:ring-electric-blue/20 transition-all cursor-pointer"
                                         >
                                             <option value="original">Original (Cinematic)</option>
@@ -692,6 +728,7 @@ export default function CreateClient() {
                                         onClick={() => {
                                             setShowFeedbackPopup(false);
                                             setRenderMessage({ text: "Thanks for your feedback! ❤️", type: "success" });
+                                            track('feedback_submitted', { emoji });
                                         }}
                                         className="w-14 h-14 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl text-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                                     >
